@@ -15,6 +15,7 @@ export function mountRuntime(
     get state() { return client.state; },
     emit: (componentId: string, binding: { target: 'mcp' | 'agent'; action: string }, payload: unknown) =>
       transport.postMessage({ type: 'INTERACTION', surfaceId: surfaceId(), componentId, binding: binding.target, payload }),
+    getComponent: (id: string) => client.doc?.components[id],
   };
   function renderNode(id: string): any {
     const comp = client.doc?.components[id]; if (!comp) { return null; }
