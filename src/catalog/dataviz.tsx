@@ -92,9 +92,11 @@ function BarChart({ values, title }: { values: number[]; title?: string }) {
 export const chartEntry: CatalogEntry = {
   type: 'chart',
   schema: chartSchema,
+  // Catalog descriptions must be single-line plain text with no literal newlines or double-quotes
+  // (they are injected as prompt lines and searched verbatim in JSON-stringified prompt output).
   description:
-    'Data visualization chart. props: { dataKey: string, kind: "line"|"bar", title?: string }.' +
-    ' Data comes from ctx.state[props.dataKey] (an array of numbers) — populated live by STATE_DELTA patches,' +
+    'Data visualization chart. props: { dataKey: string, kind: line|bar, title?: string }.' +
+    ' Data comes from ctx.state[props.dataKey] (an array of numbers) - populated live by STATE_DELTA patches,' +
     ' so the chart updates automatically as MCP streams new values with no model involvement.',
   render: (c, ctx) => {
     const parsed = chartSchema.safeParse(c.props);
