@@ -33,3 +33,12 @@ export function mountRuntime(
   }
   transport.postMessage({ type: 'READY', surfaceId: surfaceId() });
 }
+
+export function bootstrapFromVsCodeApi() {
+  const vscode = (globalThis as any).acquireVsCodeApi?.();
+  const root = document.getElementById('root')!;
+  const listeners: ((m: any) => void)[] = [];
+  window.addEventListener('message', (e) => listeners.forEach(cb => cb(e.data)));
+  mountRuntime(root, { postMessage: m => vscode.postMessage(m), onMessage: cb => listeners.push(cb) });
+}
+if (typeof document !== 'undefined' && (globalThis as any).acquireVsCodeApi) { bootstrapFromVsCodeApi(); }
