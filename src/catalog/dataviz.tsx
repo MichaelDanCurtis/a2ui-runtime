@@ -1,12 +1,20 @@
 import { z } from 'zod';
 import type { CatalogEntry } from './catalogEntry';
 
-const chartSchema = z.object({
-  dataKey: z.string(),
-  kind: z.enum(['line', 'bar']),
-  title: z.string().optional(),
-  data: z.array(z.number()).optional(),
-});
+const chartSchema = z
+  .object({
+    // `bind` is the canonical live-data prop: the chart's series is read from
+    // ctx.state[bind] and re-renders on every STATE_DELTA touching that key.
+    // `dataKey` is the original name and remains an accepted alias.
+    bind: z.string().optional(),
+    dataKey: z.string().optional(),
+    kind: z.enum(['line', 'bar']),
+    title: z.string().optional(),
+    data: z.array(z.number()).optional(),
+  })
+  .refine(c => typeof c.bind === 'string' || typeof c.dataKey === 'string' || Array.isArray(c.data), {
+    message: 'chart requires one of: bind, dataKey, or data',
+  });
 
 const W = 300;
 const H = 100;
@@ -96,13 +104,14 @@ export const chartEntry: CatalogEntry = {
   // Catalog descriptions must be single-line plain text with no literal newlines or double-quotes
   // (they are injected as prompt lines and searched verbatim in JSON-stringified prompt output).
   description:
-    'Data visualization chart. props: { dataKey: string, kind: line|bar, title?: string, data?: number[] }.' +
-    ' Live data from ctx.state[dataKey] (STATE_DELTA patches). Falls back to props.data for static demos.',
+    'Data visualization chart. props: { bind?: string, dataKey?: string, kind: line|bar, title?: string, data?: number[] }.' +
+    ' Set bind (or its alias dataKey) to a state key; the series is read live from ctx.state[bind] and re-renders on every STATE_DELTA touching that key. Falls back to props.data when the bound state is absent or empty.',
   render: (c, ctx) => {
     const parsed = chartSchema.safeParse(c.props);
     if (!parsed.success) return null;
-    const { dataKey, kind, title, data: staticData } = parsed.data;
-    const raw = ctx.state[dataKey];
+    const { bind, dataKey, kind, title, data: staticData } = parsed.data;
+    const stateKey = bind ?? dataKey;
+    const raw = stateKey !== undefined ? ctx.state[stateKey] : undefined;
     const liveValues = toNumbers(raw);
     const values = liveValues.length > 0 ? liveValues : (staticData ?? []);
     return kind === 'bar'

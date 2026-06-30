@@ -14,5 +14,20 @@ export function validateDocument(doc: A2uiDocument): { ok: true } | { ok: false;
       if (!doc.components[child]) { errors.push(`child '${child}' of '${id}' not found`); }
     }
   }
+  if (doc.live !== undefined) {
+    const live = doc.live as unknown as Record<string, unknown>;
+    if (typeof live.stateKey !== 'string' || live.stateKey.length === 0) {
+      errors.push(`live.stateKey must be a non-empty string`);
+    }
+    if (live.source !== 'demo' && live.source !== 'mcp') {
+      errors.push(`live.source must be 'demo' or 'mcp'`);
+    }
+    if (live.name !== undefined && typeof live.name !== 'string') {
+      errors.push(`live.name must be a string when present`);
+    }
+    if (live.intervalMs !== undefined && (typeof live.intervalMs !== 'number' || live.intervalMs <= 0)) {
+      errors.push(`live.intervalMs must be a positive number when present`);
+    }
+  }
   return errors.length ? { ok: false, errors } : { ok: true };
 }

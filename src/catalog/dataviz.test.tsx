@@ -207,6 +207,82 @@ describe('chart live update via STATE_DELTA', () => {
     document.body.removeChild(container);
   });
 
+  // ─── Part A: `bind` prop (canonical live-data binding) ─────────────────────
+
+  const boundChartDoc = {
+    version: 1,
+    surfaceId: 's1',
+    root: 'chart1',
+    components: {
+      chart1: { id: 'chart1', type: 'chart', props: { bind: 'series', kind: 'bar' } },
+    },
+  };
+
+  it('updates the rendered chart when STATE_DELTA touches the bound key (bind prop)', async () => {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+
+    let handler: (m: any) => void = () => {};
+    await act(async () => {
+      mountRuntime(root, { postMessage: () => {}, onMessage: cb => { handler = cb; } });
+    });
+
+    await act(async () => { handler({ type: 'RENDER', doc: boundChartDoc }); });
+    // Empty bound state → no bars yet
+    expect(root.querySelectorAll('rect').length).toBe(0);
+
+    // STATE_DELTA pushes 3 values into the bound key → 3 bars
+    await act(async () => {
+      handler({ type: 'STATE_DELTA', surfaceId: 's1', patch: [{ op: 'add', path: '/series', value: [3, 1, 4] }] });
+    });
+    expect(root.querySelectorAll('rect').length).toBe(3);
+
+    // A subsequent delta replaces with 5 values → 5 bars (live re-render)
+    await act(async () => {
+      handler({ type: 'STATE_DELTA', surfaceId: 's1', patch: [{ op: 'replace', path: '/series', value: [1, 2, 3, 4, 5] }] });
+    });
+    expect(root.querySelectorAll('rect').length).toBe(5);
+
+    document.body.removeChild(root);
+  });
+
+  it('renders inline props.data when no bind/dataKey is set', () => {
+    const entry = catalog['chart']!;
+    const ctx = { state: {}, emit: () => {} };
+    const node = entry.render({ id: 'ci', props: { kind: 'line', data: [1, 2, 3, 4] } }, ctx as any);
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const { createRoot } = require('react-dom/client');
+    let root: any;
+    act(() => { root = createRoot(container); root.render(node); });
+
+    const polyline = container.querySelector('polyline');
+    expect(polyline).not.toBeNull();
+    const pts = polyline!.getAttribute('points')!.trim().split(/\s+/).filter(Boolean);
+    expect(pts).toHaveLength(4);
+
+    act(() => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it('bind takes precedence over inline data when bound state is non-empty', () => {
+    const entry = catalog['chart']!;
+    const ctx = { state: { series: [10, 20] }, emit: () => {} };
+    const node = entry.render({ id: 'cb', props: { bind: 'series', kind: 'bar', data: [1, 2, 3, 4, 5] } }, ctx as any);
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const { createRoot } = require('react-dom/client');
+    let root: any;
+    act(() => { root = createRoot(container); root.render(node); });
+
+    expect(container.querySelectorAll('rect').length).toBe(2);
+
+    act(() => root.unmount());
+    document.body.removeChild(container);
+  });
+
   it('AgUiClient state updates correctly with STATE_DELTA for chart data', () => {
     const client = new AgUiClient();
     client.handle({ type: 'RENDER', doc: chartDoc as any });
