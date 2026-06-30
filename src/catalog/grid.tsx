@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { z } from 'zod';
 import type { CatalogEntry, RenderContext } from './catalogEntry';
 
@@ -39,50 +40,84 @@ export const gridEntry: CatalogEntry = {
     const parsed = gridSchema.safeParse(c.props);
     if (!parsed.success) return null;
     injectGridStyles();
-    const { rows, cols, bind, binding, cellLabels } = parsed.data;
-
-    const stateMapRaw = bind !== undefined ? ctx.state[bind] : undefined;
-    const stateMap: Record<string, unknown> =
-      stateMapRaw && typeof stateMapRaw === 'object' ? (stateMapRaw as Record<string, unknown>) : {};
-
-    const cells: React.ReactNode[] = [];
-    let index = 0;
-    for (let r = 0; r < rows; r++) {
-      for (let col = 0; col < cols; col++) {
-        const cellId = `r${r}c${col}`;
-        const raw = stateMap[cellId];
-        const state: CellState =
-          raw === 'taken' || raw === 'selected' ? (raw as CellState) : 'available';
-        const label = cellLabels?.[index] ?? cellId;
-        const clickable = state === 'available' || state === 'selected';
-        cells.push(
-          <button
-            key={cellId}
-            type="button"
-            data-cell-id={cellId}
-            className={`a2ui-grid-cell a2ui-grid-cell--${state}`}
-            disabled={state === 'taken'}
-            onClick={() => {
-              if (clickable && binding) {
-                ctx.emit(cellId, binding, { cellId });
-              }
-            }}
-          >
-            {label}
-          </button>,
-        );
-        index++;
-      }
-    }
-
-    return (
-      <div
-        className="a2ui-grid"
-        style={{ gridTemplateColumns: `repeat(${cols}, max-content)` }}
-        role="grid"
-      >
-        {cells}
-      </div>
-    );
+    // Return a component element (not raw nodes) so React owns the hook state.
+    // `render()` is invoked imperatively by the host, so calling hooks here
+    // directly would violate the rules of hooks; the dedicated <GridView> the
+    // host then renders is a real component where useState is legal.
+    return <GridView props={parsed.data} ctx={ctx} />;
   },
 };
+
+type GridProps = z.infer<typeof gridSchema>;
+
+/**
+ * OPTIMISTIC SELECTION: clicking an `available` cell flips it to `selected`
+ * IMMEDIATELY via local React state, with no dependency on a round-trip — the
+ * click still `ctx.emit(...)`s as before. Authoritative bound state wins: a
+ * cell's effective state = bound-state value if present for that cell, else the
+ * local-optimistic `selected` if it was clicked, else `available`. `taken` cells
+ * (only ever from bound state) stay non-clickable. So a later STATE_DELTA that
+ * marks an optimistically-selected cell `taken` (or anything else) overrides the
+ * local optimism.
+ */
+function GridView({ props, ctx }: { props: GridProps; ctx: RenderContext }) {
+  const { rows, cols, bind, binding, cellLabels } = props;
+  const [optimistic, setOptimistic] = useState<ReadonlySet<string>>(() => new Set());
+
+  const stateMapRaw = bind !== undefined ? ctx.state[bind] : undefined;
+  const stateMap: Record<string, unknown> =
+    stateMapRaw && typeof stateMapRaw === 'object' ? (stateMapRaw as Record<string, unknown>) : {};
+
+  const cells: React.ReactNode[] = [];
+  let index = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let col = 0; col < cols; col++) {
+      const cellId = `r${r}c${col}`;
+      const raw = stateMap[cellId];
+      // Bound state is authoritative; it takes precedence over local optimism.
+      const boundState: CellState | undefined =
+        raw === 'taken' || raw === 'selected' || raw === 'available' ? (raw as CellState) : undefined;
+      const state: CellState =
+        boundState ?? (optimistic.has(cellId) ? 'selected' : 'available');
+      const label = cellLabels?.[index] ?? cellId;
+      const clickable = state === 'available' || state === 'selected';
+      cells.push(
+        <button
+          key={cellId}
+          type="button"
+          data-cell-id={cellId}
+          className={`a2ui-grid-cell a2ui-grid-cell--${state}`}
+          disabled={state === 'taken'}
+          onClick={() => {
+            if (!clickable || !binding) {
+              return;
+            }
+            // Optimistically mark as selected right away (only meaningful when
+            // not already pinned by bound state). Still emit the interaction.
+            if (state === 'available') {
+              setOptimistic(prev => {
+                const next = new Set(prev);
+                next.add(cellId);
+                return next;
+              });
+            }
+            ctx.emit(cellId, binding, { cellId });
+          }}
+        >
+          {label}
+        </button>,
+      );
+      index++;
+    }
+  }
+
+  return (
+    <div
+      className="a2ui-grid"
+      style={{ gridTemplateColumns: `repeat(${cols}, max-content)` }}
+      role="grid"
+    >
+      {cells}
+    </div>
+  );
+}
