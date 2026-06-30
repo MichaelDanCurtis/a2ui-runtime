@@ -76,6 +76,29 @@ describe('table STATE_DELTA re-render', () => {
     expect(root.querySelectorAll('td').length).toBe(4);
     document.body.removeChild(root);
   });
+
+  it('renders an empty table when a bound STATE_DELTA clears rows to [] (no stale inline fallback)', async () => {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    let handler: (m: any) => void = () => {};
+    await act(async () => {
+      mountRuntime(root, { postMessage: () => {}, onMessage: cb => { handler = cb; } });
+    });
+    // Both inline rows AND a bind: once bound state arrives it must win, even when empty.
+    const doc = {
+      version: 1, surfaceId: 's1', root: 'tbl1',
+      components: { tbl1: { id: 'tbl1', type: 'table', props: { columns: ['A', 'B'], rows: [['x', 9]], bind: 'rows' } } },
+    };
+    await act(async () => { handler({ type: 'RENDER', doc }); });
+    // No bound state yet → inline rows render.
+    expect(root.querySelectorAll('td').length).toBe(2);
+    await act(async () => {
+      handler({ type: 'STATE_DELTA', surfaceId: 's1', patch: [{ op: 'add', path: '/rows', value: [] }] });
+    });
+    // Bound state is an (empty) array → empty table, NOT the stale inline rows.
+    expect(root.querySelectorAll('td').length).toBe(0);
+    document.body.removeChild(root);
+  });
 });
 
 // ─── progress ─────────────────────────────────────────────────────────────────

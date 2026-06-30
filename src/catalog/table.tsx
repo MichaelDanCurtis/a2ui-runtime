@@ -34,7 +34,11 @@ export const tableEntry: CatalogEntry = {
     injectTableStyles();
     const { columns, rows: inlineRows, bind } = parsed.data;
     const liveRows = bind !== undefined ? ctx.state[bind] : undefined;
-    const rows: Array<Array<string | number>> = Array.isArray(liveRows) && liveRows.length > 0
+    // When bound, trust the live array even if empty: a STATE_DELTA clearing the
+    // table to [] must render an empty table, not fall back to stale inline rows.
+    // Only fall back to inline rows when there is no binding or the bound state
+    // value is not (yet) an array.
+    const rows: Array<Array<string | number>> = bind !== undefined && Array.isArray(liveRows)
       ? (liveRows as Array<Array<string | number>>)
       : (inlineRows ?? []);
     return (
