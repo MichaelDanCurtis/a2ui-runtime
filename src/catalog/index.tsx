@@ -8,6 +8,7 @@ import { tableEntry } from './table';
 import { progressEntry } from './progress';
 import { statusEntry } from './status';
 import { imageEntry } from './image';
+import { gridEntry } from './grid';
 
 const textSchema = z.object({ value: z.string().optional(), bind: z.string().optional() });
 
@@ -39,6 +40,7 @@ export const catalog: Record<string, CatalogEntry> = {
   progress: progressEntry,
   status: statusEntry,
   image: imageEntry,
+  grid: gridEntry,
 };
 
 export function getCatalogDescriptions() {

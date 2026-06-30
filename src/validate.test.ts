@@ -20,6 +20,18 @@ describe('validateDocument', () => {
     expect(validateDocument({ ...good, root: 'nope' } as any).ok).toBe(false);
   });
 
+  // ─── Document-level target field ───────────────────────────────────────────
+
+  it('accepts a doc with target: panel', () => {
+    expect(validateDocument({ ...good, target: 'panel' } as any)).toEqual({ ok: true });
+  });
+  it('accepts a doc with an absent target', () => {
+    expect(validateDocument(good as any)).toEqual({ ok: true });
+  });
+  it('rejects a doc with a bogus target', () => {
+    expect(validateDocument({ ...good, target: 'bogus' } as any).ok).toBe(false);
+  });
+
   // ─── Live-feed demo doc (the LIVE self-updating chart payload) ──────────────
 
   const liveDemoDoc = {

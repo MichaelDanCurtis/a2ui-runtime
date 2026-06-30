@@ -14,6 +14,9 @@ export function validateDocument(doc: A2uiDocument): { ok: true } | { ok: false;
       if (!doc.components[child]) { errors.push(`child '${child}' of '${id}' not found`); }
     }
   }
+  if (doc.target !== undefined && doc.target !== 'inset' && doc.target !== 'panel' && doc.target !== 'both') {
+    errors.push(`target must be 'inset', 'panel', or 'both' when present`);
+  }
   if (doc.live !== undefined) {
     const live = doc.live as unknown as Record<string, unknown>;
     if (typeof live.stateKey !== 'string' || live.stateKey.length === 0) {

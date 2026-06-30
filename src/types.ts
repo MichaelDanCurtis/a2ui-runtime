@@ -44,4 +44,10 @@ export interface A2uiDocument {
   components: Record<ComponentId, A2uiComponent>;
   /** Optional live-data binding; starts a self-updating feed on render. */
   live?: A2uiLiveBinding;
+  /**
+   * Optional surface placement hint. Absent is treated as 'inset' (rendered
+   * inline in the chat). 'panel' targets a dedicated webview panel; 'both'
+   * renders in the inset and the panel.
+   */
+  target?: 'inset' | 'panel' | 'both';
 }
