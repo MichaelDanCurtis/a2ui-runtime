@@ -5,6 +5,7 @@ const chartSchema = z.object({
   dataKey: z.string(),
   kind: z.enum(['line', 'bar']),
   title: z.string().optional(),
+  data: z.array(z.number()).optional(),
 });
 
 const W = 300;
@@ -95,15 +96,15 @@ export const chartEntry: CatalogEntry = {
   // Catalog descriptions must be single-line plain text with no literal newlines or double-quotes
   // (they are injected as prompt lines and searched verbatim in JSON-stringified prompt output).
   description:
-    'Data visualization chart. props: { dataKey: string, kind: line|bar, title?: string }.' +
-    ' Data comes from ctx.state[props.dataKey] (an array of numbers) - populated live by STATE_DELTA patches,' +
-    ' so the chart updates automatically as MCP streams new values with no model involvement.',
+    'Data visualization chart. props: { dataKey: string, kind: line|bar, title?: string, data?: number[] }.' +
+    ' Live data from ctx.state[dataKey] (STATE_DELTA patches). Falls back to props.data for static demos.',
   render: (c, ctx) => {
     const parsed = chartSchema.safeParse(c.props);
     if (!parsed.success) return null;
-    const { dataKey, kind, title } = parsed.data;
+    const { dataKey, kind, title, data: staticData } = parsed.data;
     const raw = ctx.state[dataKey];
-    const values = toNumbers(raw);
+    const liveValues = toNumbers(raw);
+    const values = liveValues.length > 0 ? liveValues : (staticData ?? []);
     return kind === 'bar'
       ? <BarChart values={values} title={title} />
       : <LineChart values={values} title={title} />;

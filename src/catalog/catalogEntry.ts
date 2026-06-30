@@ -5,6 +5,7 @@ export interface RenderContext {
   emit(componentId: string, binding: { target: 'mcp' | 'agent'; action: string }, payload: unknown): void;
   state: Record<string, unknown>;
   getComponent(id: string): { id: string; type: string; props: Record<string, unknown> } | undefined;
+  renderChild(id: string): ReactNode;
 }
 
 export interface CatalogEntry {

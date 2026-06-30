@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { CatalogEntry } from './catalogEntry';
 import { chartEntry } from './dataviz';
+import { containerEntry, cardEntry } from './layout';
 import { buttonEntry, textFieldEntry, selectEntry, formEntry } from './primitives';
 
 const textEntry: CatalogEntry = {
@@ -13,6 +14,8 @@ const textEntry: CatalogEntry = {
 export const catalog: Record<string, CatalogEntry> = {
   text: textEntry,
   chart: chartEntry,
+  container: containerEntry,
+  card: cardEntry,
   button: buttonEntry,
   textField: textFieldEntry,
   select: selectEntry,

@@ -162,6 +162,51 @@ describe('chart live update via STATE_DELTA', () => {
     document.body.removeChild(root);
   });
 
+  it('renders chart with props.data static fallback when state is empty', () => {
+    const entry = catalog['chart']!;
+    const ctx = { state: {}, emit: () => {} };
+    const node = entry.render(
+      { id: 'cs1', props: { dataKey: 'missing', kind: 'line', data: [1, 2, 3] } },
+      ctx as any,
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const { createRoot } = require('react-dom/client');
+    let root: any;
+    act(() => { root = createRoot(container); root.render(node); });
+
+    const polyline = container.querySelector('polyline');
+    expect(polyline).not.toBeNull();
+    const pts = polyline!.getAttribute('points')!.trim().split(/\s+/).filter(Boolean);
+    expect(pts).toHaveLength(3);
+
+    act(() => root.unmount());
+    document.body.removeChild(container);
+  });
+
+  it('prefers live state over props.data when both present', () => {
+    const entry = catalog['chart']!;
+    const ctx = { state: { series: [10, 20] }, emit: () => {} };
+    const node = entry.render(
+      { id: 'cs2', props: { dataKey: 'series', kind: 'bar', data: [1, 2, 3, 4, 5] } },
+      ctx as any,
+    );
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const { createRoot } = require('react-dom/client');
+    let root: any;
+    act(() => { root = createRoot(container); root.render(node); });
+
+    // Live state has 2 points, static data has 5 — expect 2 bars
+    const rects = container.querySelectorAll('rect');
+    expect(rects.length).toBe(2);
+
+    act(() => root.unmount());
+    document.body.removeChild(container);
+  });
+
   it('AgUiClient state updates correctly with STATE_DELTA for chart data', () => {
     const client = new AgUiClient();
     client.handle({ type: 'RENDER', doc: chartDoc as any });
