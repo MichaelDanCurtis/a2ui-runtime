@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run build:lib && npm run build:iife",
+    "build:clean": "rm -rf dist",
+    "build": "npm run build:clean && npm run build:lib && npm run build:iife",
     "build:lib": "tsc -p tsconfig.build.json",
     "build:iife": "vite build",
     "test": "vitest run --passWithNoTests",
@@ -23,7 +24,7 @@
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "jsdom": "^25.0.0",
-    "typescript": "^6.0.3",
+    "typescript": "~6.0.3",
     "vite": "^5.4.0",
     "vitest": "^2.1.0"
   }
