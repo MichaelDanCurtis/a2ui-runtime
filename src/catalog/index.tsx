@@ -3,6 +3,7 @@ import type { CatalogEntry } from './catalogEntry';
 import { chartEntry } from './dataviz';
 import { containerEntry, cardEntry } from './layout';
 import { buttonEntry, textFieldEntry, selectEntry, formEntry } from './primitives';
+import { sketchEntry } from './sketch';
 
 const textEntry: CatalogEntry = {
   type: 'text',
@@ -20,6 +21,7 @@ export const catalog: Record<string, CatalogEntry> = {
   textField: textFieldEntry,
   select: selectEntry,
   form: formEntry,
+  sketch: sketchEntry,
 };
 
 export function getCatalogDescriptions() {
