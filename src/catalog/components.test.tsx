@@ -211,6 +211,25 @@ describe('image catalog entry', () => {
     expect(img!.getAttribute('height')).toBe('80');
     unmount();
   });
+
+  it('does NOT render an img for a javascript: src', () => {
+    const entry = catalog['image']!;
+    const node = entry.render({ id: 'imgX', props: { src: 'javascript:alert(1)' } }, emptyCtx);
+    // Schema refine rejects → render returns null → nothing mounts.
+    expect(node).toBeNull();
+  });
+
+  it('does NOT render an img for a data:text/html src', () => {
+    const entry = catalog['image']!;
+    const node = entry.render({ id: 'imgY', props: { src: 'data:text/html,<script>alert(1)</script>' } }, emptyCtx);
+    expect(node).toBeNull();
+  });
+
+  it('does NOT render an img for a vscode-resource: src', () => {
+    const entry = catalog['image']!;
+    const node = entry.render({ id: 'imgZ', props: { src: 'vscode-resource://secret' } }, emptyCtx);
+    expect(node).toBeNull();
+  });
 });
 
 // ─── chart area variant ───────────────────────────────────────────────────────

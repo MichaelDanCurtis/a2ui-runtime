@@ -12,4 +12,18 @@ describe('applyStateDelta', () => {
     const r = applyStateDelta({}, [{ op: 'replace', path: '/missing', value: 1 }] as any);
     expect('error' in r).toBe(true);
   });
+
+  it('rejects a prototype-pollution patch and leaves Object.prototype safe', () => {
+    const r = applyStateDelta({}, [{ op: 'add', path: '/__proto__/polluted', value: 1 }] as any);
+    expect('error' in r).toBe(true);
+    expect(({} as any).polluted).toBeUndefined();
+    expect((Object.prototype as any).polluted).toBeUndefined();
+  });
+
+  it('rejects constructor/prototype path segments too', () => {
+    const r1 = applyStateDelta({}, [{ op: 'add', path: '/constructor/x', value: 1 }] as any);
+    const r2 = applyStateDelta({}, [{ op: 'add', path: '/a/prototype/x', value: 1 }] as any);
+    expect('error' in r1).toBe(true);
+    expect('error' in r2).toBe(true);
+  });
 });

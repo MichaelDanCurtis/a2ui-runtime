@@ -10,7 +10,9 @@ const chartSchema = z
     dataKey: z.string().optional(),
     kind: z.enum(['line', 'bar', 'area']),
     title: z.string().optional(),
-    data: z.array(z.number()).optional(),
+    // `data` is capped at 5000 points; an untrusted document cannot force an
+    // unbounded SVG node count.
+    data: z.array(z.number()).max(5000).optional(),
   })
   .refine(c => typeof c.bind === 'string' || typeof c.dataKey === 'string' || Array.isArray(c.data), {
     message: 'chart requires one of: bind, dataKey, or data',
@@ -27,8 +29,15 @@ function toNumbers(value: unknown): number[] {
 
 function normalize(values: number[]): number[] {
   if (values.length === 0) return [];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  // Compute min/max with a loop, NOT Math.min(...values): spreading a large
+  // array into call-args throws RangeError (max call-stack / arg-count).
+  let min = values[0];
+  let max = values[0];
+  for (let i = 1; i < values.length; i++) {
+    const v = values[i];
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
   const range = max - min || 1;
   return values.map(v => (v - min) / range);
 }

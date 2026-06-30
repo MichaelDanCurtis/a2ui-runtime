@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { z } from 'zod';
 import type { CatalogEntry, RenderContext } from './catalogEntry';
 
+// rows/cols are bounded to [0, 50] (≤2500 cells total) so an untrusted document
+// cannot force the renderer to build an astronomical number of cell <button>s.
 const gridSchema = z.object({
-  rows: z.number(),
-  cols: z.number(),
+  rows: z.number().int().min(0).max(50),
+  cols: z.number().int().min(0).max(50),
   bind: z.string().optional(),
   binding: z.object({ target: z.enum(['mcp', 'agent']), action: z.string() }).optional(),
   cellLabels: z.array(z.string()).optional(),

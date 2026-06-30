@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import type { CatalogEntry } from './catalogEntry';
 
+// `rows` is capped at 1000 so an untrusted document cannot force millions of
+// <td> nodes into the DOM.
 const tableSchema = z.object({
   columns: z.array(z.string()),
-  rows: z.array(z.array(z.union([z.string(), z.number()]))).optional(),
+  rows: z.array(z.array(z.union([z.string(), z.number()]))).max(1000).optional(),
   bind: z.string().optional(),
 });
 

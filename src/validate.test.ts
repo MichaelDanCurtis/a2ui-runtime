@@ -63,4 +63,56 @@ describe('validateDocument', () => {
     const bad = { ...liveDemoDoc, live: { stateKey: 'series', source: 'demo', intervalMs: 0 } };
     expect(validateDocument(bad as any).ok).toBe(false);
   });
+
+  // ─── Untrusted-document size/count/depth caps (DoS guard) ───────────────────
+
+  it('rejects a doc exceeding the component count cap', () => {
+    const components: Record<string, unknown> = {
+      root: { id: 'root', type: 'text', props: { value: 'hi' } },
+    };
+    for (let i = 0; i < 600; i++) {
+      components[`t${i}`] = { id: `t${i}`, type: 'text', props: { value: 'x' } };
+    }
+    const doc = { version: 1, surfaceId: 's', root: 'root', components };
+    const r = validateDocument(doc as any);
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.errors.some(e => /component count/.test(e))).toBe(true);
+  });
+
+  it('rejects an over-long string prop', () => {
+    const doc = {
+      version: 1, surfaceId: 's', root: 't1',
+      components: { t1: { id: 't1', type: 'text', props: { value: 'a'.repeat(10_001) } } },
+    };
+    const r = validateDocument(doc as any);
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.errors.some(e => /out of bounds/.test(e))).toBe(true);
+  });
+
+  it('rejects an over-long array prop', () => {
+    const big = Array.from({ length: 5_001 }, (_, i) => String(i));
+    const doc = {
+      version: 1, surfaceId: 's', root: 'g1',
+      components: { g1: { id: 'g1', type: 'grid', props: { rows: 1, cols: 1, cellLabels: big } } },
+    };
+    const r = validateDocument(doc as any);
+    expect(r.ok).toBe(false);
+    expect(!r.ok && r.errors.some(e => /out of bounds|array length/.test(e))).toBe(true);
+  });
+
+  it('rejects a grid whose rows/cols exceed the schema cap', () => {
+    const doc = {
+      version: 1, surfaceId: 's', root: 'g1',
+      components: { g1: { id: 'g1', type: 'grid', props: { rows: 100000, cols: 100000 } } },
+    };
+    expect(validateDocument(doc as any).ok).toBe(false);
+  });
+
+  it('accepts a 5x6 seat grid within the new caps', () => {
+    const doc = {
+      version: 1, surfaceId: 's', root: 'g1',
+      components: { g1: { id: 'g1', type: 'grid', props: { rows: 5, cols: 6, binding: { target: 'mcp', action: 'pick-seat' } } } },
+    };
+    expect(validateDocument(doc as any)).toEqual({ ok: true });
+  });
 });

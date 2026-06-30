@@ -94,6 +94,23 @@ describe('chart catalog entry', () => {
     act(() => root.unmount());
     document.body.removeChild(container);
   });
+
+  it('computes min/max for a large data array without throwing (no Math.min spread)', () => {
+    const entry = chartEntry()!;
+    // 200k points would throw RangeError if normalize() spread into Math.min/max.
+    const big = Array.from({ length: 200_000 }, (_, i) => i % 97);
+    const ctx = { state: { huge: big }, emit: () => {} };
+    expect(() => {
+      const node = entry.render({ id: 'cbig', props: { dataKey: 'huge', kind: 'line' } }, ctx as any);
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const { createRoot } = require('react-dom/client');
+      let root: any;
+      act(() => { root = createRoot(container); root.render(node); });
+      act(() => root.unmount());
+      document.body.removeChild(container);
+    }).not.toThrow();
+  });
 });
 
 // ─── Integration: STATE_DELTA causes live re-render ──────────────────────────
