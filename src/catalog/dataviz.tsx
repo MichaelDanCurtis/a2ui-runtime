@@ -8,7 +8,7 @@ const chartSchema = z
     // `dataKey` is the original name and remains an accepted alias.
     bind: z.string().optional(),
     dataKey: z.string().optional(),
-    kind: z.enum(['line', 'bar']),
+    kind: z.enum(['line', 'bar', 'area']),
     title: z.string().optional(),
     data: z.array(z.number()).optional(),
   })
@@ -98,13 +98,50 @@ function BarChart({ values, title }: { values: number[]; title?: string }) {
   );
 }
 
+function AreaChart({ values, title }: { values: number[]; title?: string }) {
+  const innerW = W - PAD * 2;
+  const innerH = H - PAD * 2;
+  const norm = normalize(values);
+
+  if (norm.length === 0) {
+    return (
+      <div className="a2ui-chart a2ui-chart--area">
+        {title && <div className="a2ui-chart-title">{title}</div>}
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label={title ?? 'area chart'} />
+      </div>
+    );
+  }
+
+  const pts = norm.map((v, i) => {
+    const x = PAD + (i / Math.max(norm.length - 1, 1)) * innerW;
+    const y = PAD + (1 - v) * innerH;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const firstX = (PAD).toFixed(1);
+  const lastX = (PAD + innerW).toFixed(1);
+  const baseY = (PAD + innerH).toFixed(1);
+  const polyPoints = pts.join(' ');
+  const areaPath = `M ${firstX},${baseY} L ${pts[0]} ${norm.slice(1).map((_, i) => `L ${pts[i + 1]}`).join(' ')} L ${lastX},${baseY} Z`;
+
+  return (
+    <div className="a2ui-chart a2ui-chart--area">
+      {title && <div className="a2ui-chart-title">{title}</div>}
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-label={title ?? 'area chart'}>
+        <path d={areaPath} fill="currentColor" fillOpacity={0.2} stroke="none" />
+        <polyline points={polyPoints} fill="none" stroke="currentColor" strokeWidth={2} />
+      </svg>
+    </div>
+  );
+}
+
 export const chartEntry: CatalogEntry = {
   type: 'chart',
   schema: chartSchema,
   // Catalog descriptions must be single-line plain text with no literal newlines or double-quotes
   // (they are injected as prompt lines and searched verbatim in JSON-stringified prompt output).
   description:
-    'Data visualization chart. props: { bind?: string, dataKey?: string, kind: line|bar, title?: string, data?: number[] }.' +
+    'Data visualization chart. props: { bind?: string, dataKey?: string, kind: line|bar|area, title?: string, data?: number[] }.' +
     ' Set bind (or its alias dataKey) to a state key; the series is read live from ctx.state[bind] and re-renders on every STATE_DELTA touching that key. Falls back to props.data when the bound state is absent or empty.',
   render: (c, ctx) => {
     const parsed = chartSchema.safeParse(c.props);
@@ -114,8 +151,8 @@ export const chartEntry: CatalogEntry = {
     const raw = stateKey !== undefined ? ctx.state[stateKey] : undefined;
     const liveValues = toNumbers(raw);
     const values = liveValues.length > 0 ? liveValues : (staticData ?? []);
-    return kind === 'bar'
-      ? <BarChart values={values} title={title} />
-      : <LineChart values={values} title={title} />;
+    if (kind === 'bar') return <BarChart values={values} title={title} />;
+    if (kind === 'area') return <AreaChart values={values} title={title} />;
+    return <LineChart values={values} title={title} />;
   },
 };

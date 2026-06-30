@@ -4,6 +4,10 @@ import { chartEntry } from './dataviz';
 import { containerEntry, cardEntry } from './layout';
 import { buttonEntry, textFieldEntry, selectEntry, formEntry } from './primitives';
 import { sketchEntry } from './sketch';
+import { tableEntry } from './table';
+import { progressEntry } from './progress';
+import { statusEntry } from './status';
+import { imageEntry } from './image';
 
 const textSchema = z.object({ value: z.string().optional(), bind: z.string().optional() });
 
@@ -31,6 +35,10 @@ export const catalog: Record<string, CatalogEntry> = {
   select: selectEntry,
   form: formEntry,
   sketch: sketchEntry,
+  table: tableEntry,
+  progress: progressEntry,
+  status: statusEntry,
+  image: imageEntry,
 };
 
 export function getCatalogDescriptions() {
