@@ -1,3 +1,5 @@
 export * from './types';
 export * from './protocol';
-export { mountRuntime, bootstrapFromVsCodeApi } from './host';
+export { validateDocument } from './validate';
+export { applyStateDelta } from './state';
+export { getCatalogDescriptions } from './catalog';
