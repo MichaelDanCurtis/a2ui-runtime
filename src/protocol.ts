@@ -8,7 +8,7 @@ export type HostToInsetMessage =
 
 export type InsetToHostMessage =
   | { type: 'READY'; surfaceId: string }
-  | { type: 'INTERACTION'; surfaceId: string; componentId: string; binding: 'mcp' | 'agent'; payload: unknown }
+  | { type: 'INTERACTION'; surfaceId: string; componentId: string; binding: 'mcp' | 'agent'; action: string; payload: unknown }
   | { type: 'RESIZE'; surfaceId: string; height: number };
 
 const HOST_TYPES = new Set(['RENDER', 'STATE_DELTA', 'DISPOSE']);

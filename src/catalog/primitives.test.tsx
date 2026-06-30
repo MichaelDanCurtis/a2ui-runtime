@@ -56,6 +56,7 @@ describe('button: with binding', () => {
     const msg = interactions[interactions.length - 1];
     expect(msg.componentId).toBe('btn1');
     expect(msg.binding).toBe('mcp');
+    expect(msg.action).toBe('refresh');
 
     document.body.removeChild(root);
   });

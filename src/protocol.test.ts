@@ -7,9 +7,10 @@ describe('protocol guards', () => {
     expect(isHostToInset(msg)).toBe(true);
     expect(isInsetToHost(msg)).toBe(false);
   });
-  it('accepts a valid INTERACTION message as inset→host', () => {
-    const msg: InsetToHostMessage = { type: 'INTERACTION', surfaceId: 's1', componentId: 'b1', binding: 'mcp', payload: {} };
+  it('accepts a valid INTERACTION message as inset→host (carries binding target + action)', () => {
+    const msg: InsetToHostMessage = { type: 'INTERACTION', surfaceId: 's1', componentId: 'b1', binding: 'mcp', action: 'refresh', payload: {} };
     expect(isInsetToHost(msg)).toBe(true);
+    expect(msg.action).toBe('refresh');
   });
   it('rejects an unknown type', () => {
     expect(isHostToInset({ type: 'NOPE' } as any)).toBe(false);

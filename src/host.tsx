@@ -116,7 +116,7 @@ export function mountRuntime(
   const ctx = {
     get state() { return client.state; },
     emit: (componentId: string, binding: { target: 'mcp' | 'agent'; action: string }, payload: unknown) =>
-      transport.postMessage({ type: 'INTERACTION', surfaceId: surfaceId(), componentId, binding: binding.target, payload }),
+      transport.postMessage({ type: 'INTERACTION', surfaceId: surfaceId(), componentId, binding: binding.target, action: binding.action, payload }),
     getComponent: (id: string) => client.doc?.components[id],
     renderChild: (id: string) => renderNode(id),
   };

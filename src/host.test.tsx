@@ -16,4 +16,24 @@ describe('mountRuntime', () => {
     expect(root.textContent).toContain('hi');
     expect(posts.some(p => p.type === 'READY')).toBe(true);
   });
+
+  it('re-renders a bind-ed text when a STATE_DELTA updates the bound state key', async () => {
+    const boundDoc = {
+      version: 1,
+      surfaceId: 's',
+      root: 't',
+      components: { t: { id: 't', type: 'text', props: { bind: 'lastAction' } } },
+    };
+    const root = document.createElement('div');
+    let handler: any;
+    mountRuntime(root, { postMessage: () => { }, onMessage: cb => { handler = cb; } });
+    await act(async () => { handler({ type: 'RENDER', doc: boundDoc }); });
+    // No state yet → empty string.
+    expect(root.textContent).toBe('');
+    // STATE_DELTA sets the bound key → the bind-ed text must reflect it.
+    await act(async () => {
+      handler({ type: 'STATE_DELTA', surfaceId: 's', patch: [{ op: 'add', path: '/lastAction', value: 'clicked' }] });
+    });
+    expect(root.textContent).toContain('clicked');
+  });
 });
