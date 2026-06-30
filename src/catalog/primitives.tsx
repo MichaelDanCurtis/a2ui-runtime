@@ -159,7 +159,26 @@ function FormComponent({
   ctx: RenderContext;
 }) {
   // Local controlled state: field name → value
-  const [values, setValues] = useState<Record<string, string>>({});
+  // Initialize from each child field's default so unmodified fields are present on submit.
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const childId of children) {
+      const child = ctx.getComponent(childId);
+      if (!child) continue;
+      if (child.type === 'textField') {
+        const parsed = textFieldSchema.safeParse(child.props);
+        if (parsed.success) {
+          init[parsed.data.name] = '';
+        }
+      } else if (child.type === 'select') {
+        const parsed = selectSchema.safeParse(child.props);
+        if (parsed.success) {
+          init[parsed.data.name] = parsed.data.options[0]?.value ?? '';
+        }
+      }
+    }
+    return init;
+  });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -213,6 +232,7 @@ function FormComponent({
           );
         }
 
+        console.warn(`[a2ui] form "${id}": unsupported child type "${child.type}" (id: ${childId}) — skipping`);
         return null;
       })}
       <button type="submit" className="a2ui-button">

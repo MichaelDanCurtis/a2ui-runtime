@@ -48,11 +48,11 @@ describe('button: with binding', () => {
     expect(btn).not.toBeNull();
     expect(btn!.textContent).toBe('Click me');
 
-    const before = t.posts.length;
+    const before = t.posts.filter(p => p.type === 'INTERACTION').length;
     await act(async () => { btn!.click(); });
 
     const interactions = t.posts.filter(p => p.type === 'INTERACTION');
-    expect(interactions.length).toBeGreaterThan(0);
+    expect(interactions.length).toBe(before + 1);
     const msg = interactions[interactions.length - 1];
     expect(msg.componentId).toBe('btn1');
     expect(msg.binding).toBe('mcp');
@@ -220,6 +220,63 @@ describe('form: submit gathers child field values', () => {
     const values = (msg.payload as any).values;
     expect(values).toHaveProperty('username', 'alice');
     expect(values).toHaveProperty('email', 'alice@example.com');
+
+    document.body.removeChild(root);
+  });
+
+  it('unmodified select child still appears in payload.values with first option value', async () => {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const t = makeTransport();
+
+    await act(async () => { mountRuntime(root, t); });
+
+    const doc = {
+      version: 1,
+      surfaceId: 's6',
+      root: 'form3',
+      components: {
+        form3: {
+          id: 'form3',
+          type: 'form',
+          props: {
+            submitLabel: 'Go',
+            children: ['sel2'],
+            binding: { target: 'mcp', action: 'submit-select-form' },
+          },
+        },
+        sel2: {
+          id: 'sel2',
+          type: 'select',
+          props: {
+            name: 'priority',
+            options: [
+              { value: 'low', label: 'Low' },
+              { value: 'high', label: 'High' },
+            ],
+          },
+        },
+      },
+    };
+
+    await act(async () => { t.send({ type: 'RENDER', doc }); });
+
+    // Submit without changing the select
+    const form = root.querySelector('form') as HTMLFormElement;
+    expect(form).not.toBeNull();
+
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    const interactions = t.posts.filter(p => p.type === 'INTERACTION');
+    expect(interactions.length).toBeGreaterThan(0);
+    const msg = interactions[interactions.length - 1];
+    expect(msg.componentId).toBe('form3');
+    expect(msg.payload).toHaveProperty('values');
+    const values = (msg.payload as any).values;
+    // The select was never touched — its first option value must still be present
+    expect(values).toHaveProperty('priority', 'low');
 
     document.body.removeChild(root);
   });
