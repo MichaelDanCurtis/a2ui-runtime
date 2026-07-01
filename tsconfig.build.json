@@ -7,6 +7,6 @@
     "rootDir": "src",
     "skipLibCheck": true
   },
-  "include": ["src/index.ts", "src/types.ts", "src/protocol.ts", "src/validate.ts", "src/state.ts", "src/catalog"],
+  "include": ["src/index.ts", "src/types.ts", "src/protocol.ts", "src/validate.ts", "src/state.ts", "src/builder.ts", "src/catalog"],
   "exclude": ["node_modules", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }
