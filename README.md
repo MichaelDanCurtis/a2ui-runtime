@@ -79,6 +79,7 @@ transport.postMessage({ type: 'RENDER', doc: surface });
   live MCP data, panel surfaces + `target`.
 - [Extending](docs/extending.md) — add your own catalog component.
 - [Security](docs/security.md) — validation caps and trust model.
+- [Accessibility](docs/accessibility.md) — how insets are announced + authoring guidance.
 
 ## Live gallery
 
